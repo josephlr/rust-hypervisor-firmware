@@ -40,66 +40,6 @@ impl MemoryRegion {
         unsafe { core::slice::from_raw_parts_mut((self.base + offset) as *mut T, length as usize) }
     }
 
-    /// Read a value from a given offset
-    fn read<T>(&self, offset: u64) -> T
-    where
-        T: Copy,
-    {
-        assert!((offset + (core::mem::size_of::<T>() - 1) as u64) < self.length);
-        unsafe { *((self.base + offset) as *const T) }
-    }
-
-    /// Read a single byte at a given offset
-    pub fn read_u8(&self, offset: u64) -> u8 {
-        self.read(offset)
-    }
-
-    /// Read a single word at a given offset
-    pub fn read_u16(&self, offset: u64) -> u16 {
-        self.read(offset)
-    }
-
-    /// Read a single dword at a given offset
-    pub fn read_u32(&self, offset: u64) -> u32 {
-        self.read(offset)
-    }
-
-    // Read a single qword at a given offset
-    pub fn read_u64(&self, offset: u64) -> u64 {
-        self.read(offset)
-    }
-
-    /// Write a value at the given offset
-    pub fn write<T>(&self, offset: u64, value: T) {
-        assert!((offset + (core::mem::size_of::<T>() - 1) as u64) < self.length);
-        unsafe {
-            *((self.base + offset) as *mut T) = value;
-        }
-    }
-
-    /// Write a single byte at given offset
-    pub fn write_u8(&self, offset: u64, value: u8) {
-        self.write(offset, value)
-    }
-
-    /// Write a single word at given offset
-    pub fn write_u16(&self, offset: u64, value: u16) {
-        self.write(offset, value)
-    }
-
-    /// Write a single dword at given offset
-    pub fn write_u32(&self, offset: u64, value: u32) {
-        self.write(offset, value)
-    }
-
-    /// Write a single qword at given offset
-    pub fn write_u64(&self, offset: u64, value: u64) {
-        assert!(offset + 7 < self.length);
-        unsafe {
-            *((self.base + offset) as *mut u64) = value;
-        }
-    }
-
     /// Read a value at given offset with a mechanism suitable for MMIO
     fn io_read<T>(&self, offset: u64) -> T {
         assert!((offset + (core::mem::size_of::<T>() - 1) as u64) < self.length);

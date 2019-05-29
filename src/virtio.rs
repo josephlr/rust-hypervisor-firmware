@@ -14,6 +14,7 @@
 
 /// Virtio related errors
 #[cfg(not(test))]
+#[derive(Debug)]
 pub enum Error {
     #[cfg(not(test))]
     VirtioMagicInvalid,

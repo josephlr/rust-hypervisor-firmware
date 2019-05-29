@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::boot_params::BootParams;
+#[cfg(not(test))]
 use crate::bzimage;
 use crate::fat;
 use fat::Read;
@@ -23,6 +25,7 @@ pub struct LoaderConfig {
 }
 
 #[cfg(not(test))]
+#[derive(Debug)]
 pub enum Error {
     FileError,
     BzImageError,
@@ -126,7 +129,7 @@ fn default_entry_path(fs: &fat::Filesystem) -> Result<[u8; 260], fat::Error> {
 }
 
 #[cfg(not(test))]
-pub fn load_default_entry(fs: &fat::Filesystem) -> Result<(u64), Error> {
+pub fn load_default_entry(fs: &fat::Filesystem, params: &mut BootParams) -> Result<(u64), Error> {
     let default_entry_path = default_entry_path(&fs)?;
     let default_entry_path = ascii_strip(&default_entry_path);
 
@@ -138,16 +141,39 @@ pub fn load_default_entry(fs: &fat::Filesystem) -> Result<(u64), Error> {
     let cmdline = ascii_strip(&entry.cmdline);
 
     let mut bzimage_file = fs.open(bzimage_path)?;
-    let jump_address = bzimage::load_kernel(&mut bzimage_file)?;
+
+    log!("Opened the kernel file\n");
+
+    let old_cmd_line_ptr = params.hdr.cmd_line_ptr;
+    let old_cmdline_size = params.hdr.cmdline_size;
+
+    let jump_address = bzimage::load_kernel(&mut bzimage_file, params).map_err(|e| {
+        log!("Error loading kernel: {:?}\n", e);
+        e
+    })?;
+    log!("Kernel Loaded\n");
 
     if !initrd_path.is_empty() {
         let mut initrd_file = fs.open(initrd_path)?;
-        bzimage::load_initrd(&mut initrd_file)?;
+        bzimage::load_initrd(&mut initrd_file, params).map_err(|e| {
+            log!("Error loading initrd: {:?}\n", e);
+            e
+        })?;
     }
 
+    log!("Initrd Loaded\n");
+
     if !cmdline.is_empty() {
-        bzimage::append_commandline(cmdline)?
+        params.hdr.cmd_line_ptr = old_cmd_line_ptr;
+        params.hdr.cmdline_size = old_cmdline_size;
+
+        bzimage::append_commandline(cmdline, params).map_err(|e| {
+            log!("Error loading cmdline: {:?}\n", e);
+            e
+        })?;
     }
+
+    log!("Cmdline loaded\n");
 
     Ok(jump_address)
 }
