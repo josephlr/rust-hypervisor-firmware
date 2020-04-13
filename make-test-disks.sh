@@ -1,6 +1,6 @@
 #!/bin/bash
-
-rm -f fat12.img fat16.img fat32.img
+set -eu
+touch fat12.img fat16.img fat32.img
 
 mkdosfs -F 12 -C fat12.img 8192
 file fat12.img

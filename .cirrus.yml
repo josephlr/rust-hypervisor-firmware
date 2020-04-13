@@ -1,0 +1,20 @@
+container:
+  dockerfile: Dockerfile
+
+env:
+  RUSTFLAGS: -D warnings
+
+test_task:
+  cargo_cache:
+    folder: $CARGO_HOME/registry
+    fingerprint_script: cat Cargo.lock
+
+  format_script: cargo fmt --all -- --check
+  xbuild_script: cargo xbuild --release --target target.json
+  check_script: cargo check
+  # clippy_script: cargo clippy --all-targets --all-features
+  test_script:
+    - pwd
+    - cargo test
+
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
